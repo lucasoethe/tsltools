@@ -72,6 +72,7 @@ configParser =
       )
     <*> ( flag' Applicative (long "applicative" <> help "generates code for 'Applicative'-FRP libraries")
             <|> flag' Monadic (long "monadic" <> help "generates code for 'Monadic'-FRP libraries")
+            <|> flag' Arduino (long "arduino" <> help "generates code for Arduino")
             <|> flag' Arrow (long "arrow" <> help "generates code for 'Arrowized'-FRP libraries")
             <|> flag' Clash (long "clash" <> help "generates code for the hardware description language 'ClaSH'")
             <|> flag' JavaScript (long "javascript" <> help "generates code for Javascript")
@@ -79,7 +80,7 @@ configParser =
             <|> flag' Python (long "python" <> help "generates code for Python")
             <|> flag' JS (long "js" <> help "generates code for JS backend")
             <|> flag' XState (long "xstate" <> help "generates code for xstate diagrams")
-            <|> flag' Arduino (long "arduino" <> help "generates code for Arduino")
+            <|> flag' Verilog (long "verilog" <> help "generates code for Verilog")
         )
     <*> option
       str
