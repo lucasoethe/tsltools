@@ -153,8 +153,10 @@ import qualified TSL.Writer.CFM.Clash as Clash (implement)
 import qualified TSL.Writer.CFM.JavaScript as JavaScript (implement)
 import qualified TSL.Writer.CFM.Monadic as Monadic (implement)
 import qualified TSL.Writer.CFM.WebAudio as WebAudio (implement)
+import qualified TSL.Writer.HOA.Arduino as Arduino (implementHoa)
 import qualified TSL.Writer.HOA.JavaScript as JS (implementHoa)
 import qualified TSL.Writer.HOA.Python as Python (implementHoa)
+import qualified TSL.Writer.HOA.Verilog as Verilog (implementHoa)
 import qualified TSL.Writer.HOA.XState as XState (implementHoa)
 
 -----------------------------------------------------------------------------
@@ -167,7 +169,9 @@ data CodeTarget
   | JavaScript
   | WebAudio
   | Python
+  | Arduino
   | JS
+  | Verilog
   | XState
   deriving (Show, Ord, Eq)
 
@@ -185,6 +189,8 @@ implementHoa isCounter = \case
   Python -> Python.implementHoa isCounter
   XState -> XState.implementHoa
   JS -> JS.implementHoa isCounter
+  Arduino -> Arduino.implementHoa isCounter
+  Verilog -> Verilog.implementHoa isCounter
   _ -> error "Unsupported language target for given format"
 
 -- | Generates code for a specific target from a CFM. The function

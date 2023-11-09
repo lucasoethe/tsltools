@@ -79,6 +79,7 @@ configParser =
             <|> flag' Python (long "python" <> help "generates code for Python")
             <|> flag' JS (long "js" <> help "generates code for JS backend")
             <|> flag' XState (long "xstate" <> help "generates code for xstate diagrams")
+            <|> flag' Arduino (long "arduino" <> help "generates code for Arduino")
         )
     <*> option
       str

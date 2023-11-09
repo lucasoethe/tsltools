@@ -100,6 +100,8 @@ library
     TSL.Writer.CFM.Monadic
     TSL.Writer.CFM.JavaScript
     TSL.Writer.CFM.WebAudio
+    TSL.Writer.HOA.Arduino
+    TSL.Writer.HOA.Verilog
     TSL.Writer.HOA.Python
     TSL.Writer.HOA.XState
     TSL.Writer.HOA.JavaScript

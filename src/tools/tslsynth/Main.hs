@@ -119,5 +119,6 @@ prOutputs ::
   S.Configuration -> S.Specification -> String
 prOutputs c s = case S.outputs c s of
   Left err -> show err
+  Right ([]) -> ""
   Right (x : xr) -> x ++ concatMap ((:) ',' . (:) ' ') xr
   _ -> error "Uncaught pattern match"
