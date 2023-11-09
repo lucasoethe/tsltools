@@ -1,33 +1,28 @@
 INFO {
-  TITLE:       "Converted TSL Specification: Heating"
+  TITLE:       "Converted TSL Specification: test"
   DESCRIPTION: "TSL specification, which has been converted to TLSF."
   SEMANTICS:   Mealy
   TARGET:      Mealy
 }
 MAIN {
   INPUTS {
-    p0b0room29heating29off;
-    p0b0room29heating29on;
-    p0p0gt0outside29temperature0room29temperature;
+    p0b0pressed;
+    p0b0lit;
   }
 
   OUTPUTS {
-    u0room29heating29ctrl0room29heating29ctrl;
-    u0room29heating29ctrl0f1dturn2on1b;
-    u0room29heating29ctrl0f1dturn2off1b;
+    u0lit0lit;
+    u0lit0p1dp0int241b;
+    u0lit0p1dp0int231b;
   }
 
   ASSUME {
-    G (! ((p0b0room29heating29off) <-> (p0b0room29heating29on)));
-    G ((u0room29heating29ctrl0f1dturn2on1b) -> (F ((u0room29heating29ctrl0f1dturn2off1b) R (p0b0room29heating29on))));
-    G ((u0room29heating29ctrl0f1dturn2off1b) -> (F ((u0room29heating29ctrl0f1dturn2on1b) R (p0b0room29heating29off))));
-    G ((u0room29heating29ctrl0f1dturn2off1b) -> (F (! (p0p0gt0outside29temperature0room29temperature))));
 
   }
 
   GUARANTEE {
-    G (((((u0room29heating29ctrl0room29heating29ctrl) && (! (u0room29heating29ctrl0f1dturn2on1b))) && (! (u0room29heating29ctrl0f1dturn2off1b))) || (((u0room29heating29ctrl0f1dturn2on1b) && (! (u0room29heating29ctrl0room29heating29ctrl))) && (! (u0room29heating29ctrl0f1dturn2off1b)))) || (((u0room29heating29ctrl0f1dturn2off1b) && (! (u0room29heating29ctrl0room29heating29ctrl))) && (! (u0room29heating29ctrl0f1dturn2on1b))));
-    ((((G (! ((p0b0room29heating29off) <-> (p0b0room29heating29on)))) && (G ((u0room29heating29ctrl0f1dturn2on1b) -> (F ((u0room29heating29ctrl0f1dturn2off1b) R (p0b0room29heating29on)))))) && (G ((u0room29heating29ctrl0f1dturn2off1b) -> (F ((u0room29heating29ctrl0f1dturn2on1b) R (p0b0room29heating29off)))))) && (G ((u0room29heating29ctrl0f1dturn2off1b) -> (F (! (p0p0gt0outside29temperature0room29temperature)))))) -> (G ((p0p0gt0outside29temperature0room29temperature) -> (F (p0b0room29heating29off))));
+    G (((((u0lit0lit) && (! (u0lit0p1dp0int241b))) && (! (u0lit0p1dp0int231b))) || (((u0lit0p1dp0int241b) && (! (u0lit0lit))) && (! (u0lit0p1dp0int231b)))) || (((u0lit0p1dp0int231b) && (! (u0lit0lit))) && (! (u0lit0p1dp0int241b))));
+    G ((((! (p0b0pressed)) -> ((p0b0lit) <-> (X (p0b0lit)))) && ((((! (p0b0pressed)) && (X (p0b0pressed))) && (! (p0b0lit))) -> (F (u0lit0p1dp0int241b)))) && ((((! (p0b0pressed)) && (X (p0b0pressed))) && (p0b0lit)) -> (F (u0lit0p1dp0int231b))));
 
   }
 }

@@ -38,6 +38,15 @@ main = do
   Configuration {input, codeTarget, writeHoa} <- parseArguments
   let fileBasename = takeBaseName $ fromJust input
 
+  -- verify that an unrealiable condition won't arise
+  -- from a TSL => TSLF error. 
+  -- this may not be necessary, but a good example is
+  -- type mismatches (treating a boolean as an int)
+  content <- tryReadContent input
+  writeFile "tmp.tsl" content
+  spec <- loadTSL (Just "tmp.tsl")
+  let _ = toTLSF fileBasename spec
+
   -- tslmt2tsl
   content <- tryReadContent input
   case preprocess (content ++ "\n") of
