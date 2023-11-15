@@ -39,7 +39,7 @@ main = do
   let fileBasename = takeBaseName $ fromJust input
 
   -- verify that an unrealiable condition won't arise
-  -- from a TSL => TSLF error. 
+  -- from a TSL => TSLF error.
   -- this may not be necessary, but a good example is
   -- type mismatches (treating a boolean as an int)
   content <- tryReadContent input

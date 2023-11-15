@@ -1,4 +1,3 @@
-
 module TSL.Writer.HOA.Verilog
   ( implementHoa,
   )
