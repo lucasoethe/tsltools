@@ -334,15 +334,17 @@ specParser :: Parser Specification
 specParser = do
   whiteSpace
   theory <- option Nothing theoryParser
+  -- whiteSpace
   sections <- sectionParser `sepBy` spaces
   return $ Specification theory sections
 
 theoryParser :: Parser (Maybe Theory)
 theoryParser = do
-  reserved "#"
-  (reserved "UF" >> return (Just Uf))
-    <|> (reserved "EUF" >> return (Just EUf))
-    <|> (reserved "LIA" >> return (Just Lia))
+  (reserved "#UF" >> return (Just Uf))
+    <|> (reserved "#EUF" >> return (Just EUf))
+    <|> (reserved "#LIA" >> return (Just Lia))
+
+-- <|> return Nothing
 
 sectionParser :: Parser Section
 sectionParser = do
