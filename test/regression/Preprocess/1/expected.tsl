@@ -1,3 +1,4 @@
+#EUF
 always guarantee {
 eq x y;
 }

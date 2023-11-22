@@ -6,7 +6,7 @@ module TSL.ModuloTheories.Theories.Uf (UfSymbol) where
 
 import TSL.ModuloTheories.Theories.Base (TheorySymbol (..))
 
-data UfSymbol = Uninterpreted String deriving (Eq, Ord)
+newtype UfSymbol = Uninterpreted String deriving (Eq, Ord)
 
 instance TheorySymbol UfSymbol where
   readT s = Right $ Uninterpreted s

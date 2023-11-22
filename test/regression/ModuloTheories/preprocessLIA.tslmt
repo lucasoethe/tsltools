@@ -1,3 +1,4 @@
+#LIA
 always guarantee {
     [x <- x + 1];
     x = 0 -> X (x = 1);

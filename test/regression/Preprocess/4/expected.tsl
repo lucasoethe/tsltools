@@ -1,3 +1,4 @@
+#LIA
 always guarantee {
 eq (add x y) (add y x) ;
 }

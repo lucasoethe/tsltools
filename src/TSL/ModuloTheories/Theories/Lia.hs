@@ -12,8 +12,8 @@ import TSL.ModuloTheories.Theories.Base (TheorySymbol (..))
 import Text.Regex.PCRE.Heavy (re, scan)
 
 data LiaSymbol
-  = Int (Int)
-  | Var (String)
+  = Int Int
+  | Var String
   | Add
   | Sub
   | Eq

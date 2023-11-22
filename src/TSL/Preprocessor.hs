@@ -7,10 +7,10 @@ where
 
 -- Imports
 
-import Control.Monad (void)
+import Control.Monad (forM_, void)
 import Data.Functor.Identity (Identity)
 import Numeric (showFFloat)
-import TSL.Error (Error, parseError, unwrap)
+import TSL.Error (Error, genericError, parseError, unwrap)
 import TSL.ModuloTheories.Theories (Theory (..))
 import Text.Parsec
   ( alphaNum,
@@ -47,7 +47,7 @@ parenthize = surround '(' ')'
 bracketify :: String -> String
 bracketify = surround '[' ']'
 
-data Specification = Specification (Maybe Theory) [Section]
+data Specification = Specification Theory [Section]
   deriving (Eq)
 
 data Section = Section (Maybe TemporalWrapper) SectionType [Expr]
@@ -119,8 +119,7 @@ instance Fmt Char where
   fmt c = [c]
 
 instance Fmt Specification where
-  fmt (Specification (Just theory) sections) = unlines $ ('#' : show theory) : map fmt sections
-  fmt (Specification Nothing sections) = unlines $ map fmt sections
+  fmt (Specification theory sections) = unlines $ ('#' : show theory) : map fmt sections
 
 instance Show Specification where
   show = fmt
@@ -333,16 +332,16 @@ binaryFunctions =
 specParser :: Parser Specification
 specParser = do
   whiteSpace
-  theory <- option Nothing theoryParser
+  theory <- option Uf theoryParser
   -- whiteSpace
   sections <- sectionParser `sepBy` spaces
   return $ Specification theory sections
 
-theoryParser :: Parser (Maybe Theory)
+theoryParser :: Parser Theory
 theoryParser = do
-  (reserved "#UF" >> return (Just Uf))
-    <|> (reserved "#EUF" >> return (Just EUf))
-    <|> (reserved "#LIA" >> return (Just Lia))
+  (reserved "#UF" >> return Uf)
+    <|> (reserved "#EUF" >> return EUf)
+    <|> (reserved "#LIA" >> return Lia)
 
 -- <|> return Nothing
 
@@ -455,4 +454,71 @@ parse input =
 preprocess :: String -> IO String
 preprocess input = do
   spec <- unwrap $ parse input
+  check spec
   return $ fmt spec
+
+check :: Specification -> IO ()
+check (Specification Uf sections) = forM_ sections checkUfSection
+  where
+    checkUfSection :: Section -> IO ()
+    checkUfSection (Section _ _ exprs) = forM_ exprs checkUfExpr
+
+    checkUfExpr :: Expr -> IO ()
+    checkUfExpr (PredicateExpr p) = checkUfPredicate p
+    checkUfExpr (Update sig1 sig2) = forM_ [sig1, sig2] checkUfSignal
+    checkUfExpr (Unary _ e) = checkUfExpr e
+    checkUfExpr (Binary _ e1 e2) = forM_ [e1, e2] checkUfExpr
+
+    checkUfPredicate :: Predicate -> IO ()
+    checkUfPredicate (UninterpretedPredicate _ sigs) = forM_ sigs checkUfSignal
+    checkUfPredicate (BinaryPredicate binComparator _ _) = unsupported binComparator
+
+    checkUfSignal :: Signal -> IO ()
+    checkUfSignal (TSLInt _) =
+      unwrap $
+        genericError
+          "Integers are not available in the UF theory."
+    checkUfSignal (TSLReal _) =
+      undefined
+        unwrap
+        $ genericError
+          "Reals are not available in the UF theory."
+    checkUfSignal (Symbol _) = return ()
+    checkUfSignal (BinaryFunction binaryFunc _ _) = unsupported binaryFunc
+    checkUfSignal (UninterpretedFunction _ sigs) = forM_ sigs checkUfSignal
+
+    unsupported :: (Fmt a) => a -> IO ()
+    unsupported x = unwrap $ genericError $ "'" ++ fmt x ++ "' is not available in Uf theory."
+check (Specification EUf sections) = forM_ sections checkEUfSection
+  where
+    checkEUfSection :: Section -> IO ()
+    checkEUfSection (Section _ _ exprs) = forM_ exprs checkEUfExpr
+
+    checkEUfExpr :: Expr -> IO ()
+    checkEUfExpr (PredicateExpr p) = checkEUfPredicate p
+    checkEUfExpr (Update sig1 sig2) = forM_ [sig1, sig2] checkEUfSignal
+    checkEUfExpr (Unary _ e) = checkEUfExpr e
+    checkEUfExpr (Binary _ e1 e2) = forM_ [e1, e2] checkEUfExpr
+
+    checkEUfPredicate :: Predicate -> IO ()
+    checkEUfPredicate (UninterpretedPredicate _ sigs) = forM_ sigs checkEUfSignal
+    checkEUfPredicate (BinaryPredicate Eq sig1 sig2) = forM_ [sig1, sig2] checkEUfSignal
+    checkEUfPredicate (BinaryPredicate binComparator _ _) = unsupported binComparator
+
+    checkEUfSignal :: Signal -> IO ()
+    checkEUfSignal (TSLInt _) =
+      unwrap $
+        genericError
+          "Integers are not available in the UF theory."
+    checkEUfSignal (TSLReal _) =
+      undefined
+        unwrap
+        $ genericError
+          "Reals are not available in the UF theory."
+    checkEUfSignal (Symbol _) = return ()
+    checkEUfSignal (BinaryFunction binaryFunc _ _) = unsupported binaryFunc
+    checkEUfSignal (UninterpretedFunction _ sigs) = forM_ sigs checkEUfSignal
+
+    unsupported :: (Fmt a) => a -> IO ()
+    unsupported x = unwrap $ genericError $ "'" ++ fmt x ++ "' is not available in EUf theory."
+check (Specification Lia _) = return ()
