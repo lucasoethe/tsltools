@@ -1,6 +1,4 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- |
 -- Module      :  TSL.ModuloTheories.Solver
@@ -11,14 +9,14 @@
 -- Maintainer  :  Wonhyuk Choi
 module TSL.ModuloTheories.Solver (solveSat, runGetModel, runSygusQuery) where
 
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Except
 import Data.List (isInfixOf)
 import qualified Data.Text as Text
+import System.Directory
 import System.Exit (ExitCode (..))
 import System.Process (readProcessWithExitCode)
 import TSL.Error (Error, errSolver, errSygus)
-import Control.Monad.IO.Class
-import System.Directory
 
 strip :: String -> String
 strip = Text.unpack . Text.strip . Text.pack
@@ -30,11 +28,11 @@ isSat err = errSolver err
 
 runSolver :: FilePath -> [String] -> String -> ExceptT Error IO String
 runSolver solverPath args query = do
-    fileCount <- liftIO $ getDirectoryContents "tmp"
-    let logName = "tmp/tmp_" ++ (show $ ((length fileCount) `div` 2))
-    liftIO $ writeFile (logName ++ ".smt2") query  
-    liftIO $ writeFile (logName ++ "_args.txt") $ unlines args
-    parseResult =<< (ExceptT $ fmap Right $ readProcessWithExitCode solverPath args query)
+  fileCount <- liftIO $ getDirectoryContents "tmp"
+  let logName = "tmp/tmp_" ++ (show $ ((length fileCount) `div` 2))
+  liftIO $ writeFile (logName ++ ".smt2") query
+  liftIO $ writeFile (logName ++ "_args.txt") $ unlines args
+  parseResult =<< (ExceptT $ fmap Right $ readProcessWithExitCode solverPath args query)
   where
     parseResult :: (ExitCode, String, String) -> ExceptT Error IO String
     parseResult (exitCode, stdout, stderr) = case exitCode of

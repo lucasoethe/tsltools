@@ -29,7 +29,11 @@ Please note that all your contributions will be licensed together with this  pro
 
 ### Before getting started
 
-`tsltools` is developed in Haskell. The used building framework is [`stack`](https://docs.haskellstack.org/en/stable/README/). In addition, for code formatting, we use [`ormolu`](https://hackage.haskell.org/package/ormolu). Furthermore, we recommend to use linting tools such as [`hlint`](https://hackage.haskell.org/package/hlint) to improve code quality.
+`tsltools` is developed in Haskell.
+The used building framework is [`stack`](https://docs.haskellstack.org/en/stable/README/).
+In addition, for code formatting, we use [`ormolu`](https://hackage.haskell.org/package/ormolu).
+To format all Haskell code in the project, you can use `make format` that is provided by our auxiliary Makefile.
+Furthermore, we recommend to use linting tools such as [`hlint`](https://hackage.haskell.org/package/hlint) to improve code quality.
 
 ### Project Structure
 
