@@ -10,11 +10,13 @@ module TSL.ModuloTheories
   )
 where
 
+import Control.Monad (unless)
 import Control.Monad.Trans.Except
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, isJust)
+import System.Directory (findExecutable)
 import TSL.Base.Reader (readTSL)
 import TSL.Base.Specification (Specification)
-import TSL.Error (unwrap)
+import TSL.Error (genericError, unwrap)
 import TSL.ModuloTheories.Cfg
 import TSL.ModuloTheories.ConsistencyChecking
 import TSL.ModuloTheories.Predicates
@@ -23,6 +25,13 @@ import TSL.ModuloTheories.Theories
 
 theorize :: FilePath -> String -> IO String
 theorize solverPath spec = do
+  -- check if ltlsynt is available on path
+  ltlsyntAvailable <- checkSolverPath solverPath
+  unless ltlsyntAvailable $
+    unwrap . genericError $
+      "Invalid path to solver: " ++ solverPath
+
+  -- parse and theorize
   (theory, tslSpec, specStr) <- parse spec
   let cfg = unError $ cfgFromSpec theory tslSpec
       preds = unError $ predsFromSpec theory tslSpec
@@ -88,3 +97,9 @@ parse spec = do
     else do
       rawTSL <- readTSL spec
       unwrap $ (,,spec) <$> Right tUninterpretedFunctions <*> rawTSL
+
+-- | Check if the given solver path is valid
+checkSolverPath :: FilePath -> IO Bool
+checkSolverPath path = do
+  m <- findExecutable path
+  return $ isJust m
