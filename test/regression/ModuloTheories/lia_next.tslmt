@@ -1,0 +1,11 @@
+#LIA
+
+/* should be realizable by always setting y <- 0 */
+/* requires an assumption relating one time step to the next */
+/* specifically, we should generate this assumption: */
+/* G (((eq y int0()) && [y <- int0()]) -> X (eq y int0())); */
+
+always guarantee {
+    y = 0 -> X y = 0;
+    [y <- 0];
+}
