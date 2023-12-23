@@ -66,7 +66,7 @@ tUninterpretedFunctions = Uf
 instance Show Theory where
   show = \case
     Uf -> "UF"
-    EUf -> "EUF"
+    EUf -> "QF_UF"
     Lia -> "LIA"
 
 readTheory :: String -> Either Error Theory
