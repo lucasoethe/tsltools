@@ -47,7 +47,7 @@ parenthize = surround '(' ')'
 bracketify :: String -> String
 bracketify = surround '[' ']'
 
-data Specification = Specification Theory [Section]
+data Specification = Specification (Maybe Theory) [Section]
   deriving (Eq)
 
 data Section = Section (Maybe TemporalWrapper) SectionType [Expr]
@@ -119,7 +119,8 @@ instance Fmt Char where
   fmt c = [c]
 
 instance Fmt Specification where
-  fmt (Specification theory sections) = unlines $ ('#' : show theory) : map fmt sections
+  fmt (Specification (Just theory) sections) = unlines $ ('#' : show theory) : map fmt sections
+  fmt (Specification Nothing sections) = unlines $ map fmt sections
 
 instance Show Specification where
   show = fmt
@@ -332,7 +333,7 @@ binaryFunctions =
 specParser :: Parser Specification
 specParser = do
   whiteSpace
-  theory <- option Uf theoryParser
+  theory <- option Nothing (Just <$> theoryParser)
   -- whiteSpace
   sections <- sectionParser `sepBy` spaces
   return $ Specification theory sections
@@ -458,7 +459,14 @@ preprocess input = do
   return $ fmt spec
 
 check :: Specification -> IO ()
-check (Specification Uf sections) = forM_ sections checkUfSection
+check (Specification mTheory sections) = case mTheory of
+  Nothing -> checkUf sections
+  Just Uf -> checkUf sections
+  Just EUf -> checkEUf sections
+  Just Lia -> return ()
+
+checkUf :: [Section] -> IO ()
+checkUf sections = forM_ sections checkUfSection
   where
     checkUfSection :: Section -> IO ()
     checkUfSection (Section _ _ exprs) = forM_ exprs checkUfExpr
@@ -489,7 +497,9 @@ check (Specification Uf sections) = forM_ sections checkUfSection
 
     unsupported :: (Fmt a) => a -> IO ()
     unsupported x = unwrap $ genericError $ "'" ++ fmt x ++ "' is not available in Uf theory."
-check (Specification EUf sections) = forM_ sections checkEUfSection
+
+checkEUf :: [Section] -> IO ()
+checkEUf sections = forM_ sections checkEUfSection
   where
     checkEUfSection :: Section -> IO ()
     checkEUfSection (Section _ _ exprs) = forM_ exprs checkEUfExpr
@@ -521,4 +531,3 @@ check (Specification EUf sections) = forM_ sections checkEUfSection
 
     unsupported :: (Fmt a) => a -> IO ()
     unsupported x = unwrap $ genericError $ "'" ++ fmt x ++ "' is not available in EUf theory."
-check (Specification Lia _) = return ()

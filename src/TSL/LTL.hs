@@ -14,7 +14,7 @@ synthesize :: FilePath -> String -> IO String
 synthesize ltlsyntPath tlsfContents = do
   (exitCode, stdout, stderr) <- synthesize' ltlsyntPath tlsfContents
   if exitCode /= ExitSuccess
-    then unwrap . genericError $ "TSL spec UNREALIZABLE. ltlsynt stdout:\n" ++ stdout ++ "\nltlstderr:\n" ++ stderr
+    then unwrap . genericError $ "TSL spec UNREALIZABLE.\nltlsynt stdout:\n" ++ stdout ++ "\nltlstderr:\n" ++ stderr
     else return . unlines . tail . lines $ stdout
 
 realizable :: FilePath -> String -> IO Bool

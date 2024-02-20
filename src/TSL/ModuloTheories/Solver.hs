@@ -29,10 +29,10 @@ isSat err = errSolver err
 runSolver :: FilePath -> [String] -> String -> ExceptT Error IO String
 runSolver solverPath args query = do
   fileCount <- liftIO $ getDirectoryContents "tmp"
-  let logName = "tmp/tmp_" ++ (show $ ((length fileCount) `div` 2))
+  let logName = "tmp/tmp_" ++ show (length fileCount `div` 2)
   liftIO $ writeFile (logName ++ ".smt2") query
   liftIO $ writeFile (logName ++ "_args.txt") $ unlines args
-  parseResult =<< (ExceptT $ fmap Right $ readProcessWithExitCode solverPath args query)
+  parseResult =<< ExceptT (Right <$> readProcessWithExitCode solverPath args query)
   where
     parseResult :: (ExitCode, String, String) -> ExceptT Error IO String
     parseResult (exitCode, stdout, stderr) = case exitCode of
@@ -42,7 +42,7 @@ runSolver solverPath args query = do
           errMsg = show code ++ " >> " ++ stderr ++ "\n" ++ stdout
 
 solveSat :: FilePath -> String -> ExceptT Error IO Bool
-solveSat solverPath = ((=<<) toBoolean) . (runSolver solverPath smt2)
+solveSat solverPath = (=<<) toBoolean . runSolver solverPath smt2
   where
     smt2 = ["--lang=smt2"]
     toBoolean = except . isSat . strip
@@ -53,12 +53,12 @@ runGetModel solverPath = runSolver solverPath args
     args = ["--lang=smt2"]
 
 runSygusQuery :: FilePath -> Int -> String -> ExceptT Error IO String
-runSygusQuery solverPath depth = ((=<<) getResult) . (runSolver solverPath args)
+runSygusQuery solverPath depth = (=<<) getResult . runSolver solverPath args
   where
     args = depthLimit : ["-o", "sygus-sol-gterm", "--lang=sygus2"]
     depthLimit = "--sygus-abort-size=" ++ show depth
     getResult result =
       except $
-        if isInfixOf "error" result
+        if "error" `isInfixOf` result
           then errSygus result
           else Right result

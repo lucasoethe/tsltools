@@ -32,71 +32,74 @@ theorize solverPath spec = do
       "Invalid path to solver: " ++ solverPath
 
   -- parse and theorize
-  (theory, tslSpec, specStr) <- parse spec
-  let cfg = unError $ cfgFromSpec theory tslSpec
-      preds = unError $ predsFromSpec theory tslSpec
+  (mTheory, tslSpec, specStr) <- parse spec
+  case mTheory of
+    Nothing -> return specStr
+    Just theory -> do
+      let cfg = unError $ cfgFromSpec theory tslSpec
+          preds = unError $ predsFromSpec theory tslSpec
 
-      mkAlwaysAssume :: String -> String
-      mkAlwaysAssume assumptions =
-        unlines
-          [ "always assume {",
-            assumptions,
-            "}"
-          ]
+          mkAlwaysAssume :: String -> String
+          mkAlwaysAssume assumptions =
+            unlines
+              [ "always assume {",
+                assumptions,
+                "}"
+              ]
 
-      extractAssumption :: (Monad m) => ExceptT e m a -> m (Maybe a)
-      extractAssumption result = do
-        either <- runExceptT result
-        return $ case either of
-          Left _ -> Nothing
-          Right assumption -> Just assumption
+          extractAssumption :: (Monad m) => ExceptT e m a -> m (Maybe a)
+          extractAssumption result = do
+            either <- runExceptT result
+            return $ case either of
+              Left _ -> Nothing
+              Right assumption -> Just assumption
 
-      extractAssumptions :: (Monad m) => [ExceptT e m String] -> m String
-      extractAssumptions =
-        fmap (unlines . catMaybes) . mapM extractAssumption
+          extractAssumptions :: (Monad m) => [ExceptT e m String] -> m String
+          extractAssumptions =
+            fmap (unlines . catMaybes) . mapM extractAssumption
 
-      consistencyAssumptions :: IO String
-      consistencyAssumptions =
-        extractAssumptions $
-          generateConsistencyAssumptions
-            solverPath
-            preds
+          consistencyAssumptions :: IO String
+          consistencyAssumptions =
+            extractAssumptions $
+              generateConsistencyAssumptions
+                solverPath
+                preds
 
-      sygusAssumptions :: IO String
-      sygusAssumptions =
-        extractAssumptions $
-          generateSygusAssumptions
-            solverPath
-            cfg
-            (buildDtoList preds)
+          sygusAssumptions :: IO String
+          sygusAssumptions =
+            extractAssumptions $
+              generateSygusAssumptions
+                solverPath
+                cfg
+                (buildDtoList preds)
 
-      assumptionsBlock :: IO String
-      assumptionsBlock =
-        mkAlwaysAssume
-          <$> ( (++)
-                  <$> consistencyAssumptions
-                  <*> sygusAssumptions
-              )
-  (++ specStr) <$> assumptionsBlock
+          assumptionsBlock :: IO String
+          assumptionsBlock =
+            mkAlwaysAssume
+              <$> ( (++)
+                      <$> consistencyAssumptions
+                      <*> sygusAssumptions
+                  )
+      (++ specStr) <$> assumptionsBlock
   where
     unError :: (Show a) => Either a b -> b
     unError = \case
       Left err -> error $ show err
       Right val -> val
 
-parse :: String -> IO (Theory, Specification, String)
+parse :: String -> IO (Maybe Theory, Specification, String)
 parse spec = do
   let linesList = lines spec
       hasTheoryAnnotation = '#' == head (head linesList)
-      theory = readTheory $ head linesList
-      specStr = unlines $ tail linesList -- FIXME: unlines.lines is computationally wasteful
   if hasTheoryAnnotation
     then do
-      tslmt <- readTSL specStr
-      unwrap $ (,,specStr) <$> theory <*> tslmt
+      let specStr = unlines $ tail linesList -- FIXME: unlines.lines is computationally wasteful
+      theory <- unwrap <$> readTheory $ head linesList
+      tslmt <- readTSL specStr >>= unwrap
+      return (Just theory, tslmt, specStr)
     else do
-      rawTSL <- readTSL spec
-      unwrap $ (,,spec) <$> Right tUninterpretedFunctions <*> rawTSL
+      rawTSL <- readTSL spec >>= unwrap
+      return (Nothing, rawTSL, spec)
 
 -- | Check if the given solver path is valid
 checkSolverPath :: FilePath -> IO Bool
