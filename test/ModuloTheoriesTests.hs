@@ -66,7 +66,7 @@ makeTestName :: String -> String
 makeTestName = ("Modulo Theories >> " ++)
 
 cvc5Path :: FilePath
-cvc5Path = "deps/cvc5"
+cvc5Path = "deps/bin/cvc5"
 
 predicatesTests :: [Test]
 predicatesTests = [convert2Cabal (makeTestName "Predicates") hUnitTest]
