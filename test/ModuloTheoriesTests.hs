@@ -75,11 +75,14 @@ predicatesTests = [convert2Cabal (makeTestName "Predicates") hUnitTest]
     expectedNumPreds = 2
 
     hUnitTest = do
-      (theory, spec, _) <- readFile path >>= MT.parse
-      return $
-        H.TestCase $ case predsFromSpec theory spec of
-          Right preds -> expectedNumPreds @=? length preds
-          Left errMsg -> H.assertFailure $ show errMsg
+      (mTheory, spec, _) <- readFile path >>= MT.parse
+      case mTheory of
+        Nothing -> return $ H.TestCase $ H.assertFailure "Does not invoke ModuloTheory (no theory tag)."
+        Just theory ->
+          return $
+            H.TestCase $ case predsFromSpec theory spec of
+              Right preds -> expectedNumPreds @=? length preds
+              Left errMsg -> H.assertFailure $ show errMsg
 
 cfgTests :: [Test]
 cfgTests = [convert2Cabal (makeTestName "CFG") hUnitTest]
@@ -89,16 +92,19 @@ cfgTests = [convert2Cabal (makeTestName "CFG") hUnitTest]
     expectedProductionRuleSize = 1
 
     hUnitTest = do
-      (theory, spec, _) <- readFile path >>= MT.parse
-      return $ case cfgFromSpec theory spec of
-        Right cfg ->
-          let assocs = Map.assocs $ grammar cfg
-              (_, rules) = head assocs
-           in H.TestList
-                [ H.TestCase $ expectedCfgSize @=? length assocs,
-                  H.TestCase $ expectedProductionRuleSize @=? length rules
-                ]
-        Left errMsg -> H.TestCase $ H.assertFailure $ show errMsg
+      (mTheory, spec, _) <- readFile path >>= MT.parse
+      case mTheory of
+        Nothing -> return $ H.TestCase $ H.assertFailure "Does not invoke ModuloTheory (no theory tag)."
+        Just theory ->
+          return $ case cfgFromSpec theory spec of
+            Right cfg ->
+              let assocs = Map.assocs $ grammar cfg
+                  (_, rules) = head assocs
+               in H.TestList
+                    [ H.TestCase $ expectedCfgSize @=? length assocs,
+                      H.TestCase $ expectedProductionRuleSize @=? length rules
+                    ]
+            Left errMsg -> H.TestCase $ H.assertFailure $ show errMsg
 
 isSuccess :: (Monad m) => ExceptT e m a -> m Bool
 isSuccess = fmap isRight . runExceptT
@@ -114,21 +120,24 @@ consistencyTests = [convert2Cabal (makeTestName "Consistency") hUnitTest]
     expectedNumQueries = 15
 
     hUnitTest = do
-      (theory, spec, _) <- readFile path >>= MT.parse
-      let preds = case predsFromSpec theory spec of
-            Left err -> error $ show err
-            Right ps -> ps
-          results = consistencyDebug cvc5Path preds
+      (mTheory, spec, _) <- readFile path >>= MT.parse
+      case mTheory of
+        Nothing -> return $ H.TestCase $ H.assertFailure "Does not invoke ModuloTheory (no theory tag)."
+        Just theory -> do
+          let preds = case predsFromSpec theory spec of
+                Left err -> error $ show err
+                Right ps -> ps
+              results = consistencyDebug cvc5Path preds
 
-      actualNumAssumptions <- countSuccess results
+          actualNumAssumptions <- countSuccess results
 
-      return $
-        H.TestList $
-          map
-            H.TestCase
-            [ expectedNumQueries @=? length results,
-              expectedNumAssumptions @=? actualNumAssumptions
-            ]
+          return $
+            H.TestList $
+              map
+                H.TestCase
+                [ expectedNumQueries @=? length results,
+                  expectedNumAssumptions @=? actualNumAssumptions
+                ]
 
 sygusTests :: [Test]
 sygusTests =
@@ -159,16 +168,19 @@ sygusTests =
         zipWith (curry makeTestCase) paths numExpectedAssumptions
 
     makeTestCase (path, numExpected) = do
-      (theory, spec, _) <- readFile path >>= MT.parse
-      let preds = case predsFromSpec theory spec of
-            Left err -> error $ "PREDICATES ERROR: " ++ show err
-            Right ps -> ps
-          cfg = case cfgFromSpec theory spec of
-            Left err -> error $ "CFG ERROR: " ++ show err
-            Right grammar -> grammar
-          dtos = buildDtoList preds
-      numActual <- countSuccess $ generateSygusAssumptions cvc5Path cfg dtos
-      return $ H.TestCase $ numExpected @=? numActual
+      (mTheory, spec, _) <- readFile path >>= MT.parse
+      case mTheory of
+        Nothing -> return $ H.TestCase $ H.assertFailure "Does not invoke ModuloTheory (no theory tag)."
+        Just theory -> do
+          let preds = case predsFromSpec theory spec of
+                Left err -> error $ "PREDICATES ERROR: " ++ show err
+                Right ps -> ps
+              cfg = case cfgFromSpec theory spec of
+                Left err -> error $ "CFG ERROR: " ++ show err
+                Right grammar -> grammar
+              dtos = buildDtoList preds
+          numActual <- countSuccess $ generateSygusAssumptions cvc5Path cfg dtos
+          return $ H.TestCase $ numExpected @=? numActual
 
 allTests :: [Test]
 allTests = concat [predicatesTests, cfgTests, consistencyTests, sygusTests]
