@@ -104,22 +104,22 @@ predSignals = \case
   AndPLit p q -> predSignals p ++ predSignals q
 
 powerset :: [a] -> [[a]]
-powerset xs = filterM (const [True, False]) xs
+powerset = filterM (const [True, False])
 
 -- FIXME: make this tractable
 enumeratePreds :: [TheoryPredicate] -> [TheoryPredicate]
 enumeratePreds preds = map andPreds $ filter (not . null) $ powerset preds'
   where
-    preds' = preds ++ map (NotPLit) preds
+    preds' = preds ++ map NotPLit preds
 
 predsFromSpec :: Theory -> Specification -> Either Error [TheoryPredicate]
 predsFromSpec theory (Specification a g s) = mapM toTheoryPred asts
   where
-    pTerms = concat $ map fromFormula $ a ++ g
+    pTerms = concatMap fromFormula (a ++ g)
     unhash = stName s
-    toAst = fromPredicateTerm (arity . (stType s))
-    asts = map ((fmap unhash) . toAst) pTerms
-    toTheoryPred = (fmap PLiteral) . (applySemantics theory)
+    toAst = fromPredicateTerm (arity . stType s)
+    asts = map (fmap unhash . toAst) pTerms
+    toTheoryPred = fmap PLiteral . applySemantics theory
 
 fromFormula :: Formula a -> [PredicateTerm a]
 fromFormula = foldFormula baseCaseExtender []

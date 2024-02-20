@@ -50,14 +50,14 @@ generateConsistencyAssumptions ::
   [TheoryPredicate] ->
   [ExceptT Error IO String]
 generateConsistencyAssumptions path preds =
-  map ((fmap fst) . (consistencyChecking path)) (enumeratePreds preds)
+  map (fmap fst . consistencyChecking path) (enumeratePreds preds)
 
 consistencyDebug ::
   FilePath ->
   [TheoryPredicate] ->
   [ExceptT Error IO ConsistencyDebugInfo]
 consistencyDebug path preds =
-  map ((fmap snd) . (consistencyChecking path)) (enumeratePreds preds)
+  map (fmap snd . consistencyChecking path) (enumeratePreds preds)
 
 consistencyChecking ::
   FilePath ->
