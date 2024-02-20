@@ -16,8 +16,9 @@ jobs:
         with:
           enable-stack: true
           stack-version: 'latest'
-      - run: mkdir deps
-      - run: wget https://github.com/cvc5/cvc5/releases/latest/download/cvc5-Linux
-      - run: mv cvc5-Linux deps/cvc5
-      - run: chmod u+x deps/cvc5
-      - run: stack test
+      - run: mkdir deps-bin deps-src
+      - run: wget -P deps-src https://github.com/cvc5/cvc5/releases/download/cvc5-1.1.1/cvc5-Linux-static.zip
+      - run: unzip deps-src/cvc5-Linux-static.zip -d deps-src
+      - run: mv deps-src/cvc5-Linux-static/bin/cvc5 deps-bin
+      - run: chmod u+x deps-bin/cvc5
+      - run: PATH="deps-bin:$PATH" stack test
