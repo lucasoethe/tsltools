@@ -460,7 +460,7 @@ preprocess input = do
 
 check :: Specification -> IO ()
 check (Specification mTheory sections) = case mTheory of
-  Nothing -> checkUf sections
+  Nothing -> return () -- allow anything if we are skipping SYGUS
   Just Uf -> checkUf sections
   Just EUf -> checkEUf sections
   Just Lia -> return ()
