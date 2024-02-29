@@ -167,7 +167,7 @@ unwrap = \case
   Right val -> return val
 
 warn :: String -> IO ()
-warn s = hPutStrLn stderr $ "WARNING: " ++ s
+warn s = hPutStrLn stderr $ "Warning: " ++ s
 
 -- | Use this error constructor, if some sytax related misbehavior is
 -- detected.
