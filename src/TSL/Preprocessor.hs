@@ -10,7 +10,7 @@ where
 import Control.Monad (forM_, void)
 import Data.Functor.Identity (Identity)
 import Numeric (showFFloat)
-import TSL.Error (Error, genericError, parseError, unwrap)
+import TSL.Error (Error, genericError, parseError, unwrap, warn)
 import TSL.ModuloTheories.Theories (Theory (..))
 import Text.Parsec
   ( alphaNum,
@@ -460,13 +460,13 @@ preprocess input = do
 
 check :: Specification -> IO ()
 check (Specification mTheory sections) = case mTheory of
-  Nothing -> return () -- allow anything if we are skipping SYGUS
-  Just Uf -> checkUf sections
+  Nothing -> checkUf False sections -- only warn if no tag
+  Just Uf -> checkUf True sections
   Just EUf -> checkEUf sections
   Just Lia -> return ()
 
-checkUf :: [Section] -> IO ()
-checkUf sections = forM_ sections checkUfSection
+checkUf :: Bool -> [Section] -> IO ()
+checkUf isError sections = forM_ sections checkUfSection
   where
     checkUfSection :: Section -> IO ()
     checkUfSection (Section _ _ exprs) = forM_ exprs checkUfExpr
@@ -483,20 +483,19 @@ checkUf sections = forM_ sections checkUfSection
 
     checkUfSignal :: Signal -> IO ()
     checkUfSignal (TSLInt _) =
-      unwrap $
-        genericError
-          "Integers are not available in the UF theory."
+      unsupported "integer"
     checkUfSignal (TSLReal _) =
-      undefined
-        unwrap
-        $ genericError
-          "Reals are not available in the UF theory."
+      unsupported "real number "
     checkUfSignal (Symbol _) = return ()
     checkUfSignal (BinaryFunction binaryFunc _ _) = unsupported binaryFunc
     checkUfSignal (UninterpretedFunction _ sigs) = forM_ sigs checkUfSignal
 
     unsupported :: (Fmt a) => a -> IO ()
-    unsupported x = unwrap $ genericError $ "'" ++ fmt x ++ "' is not available in Uf theory."
+    unsupported x =
+      let message = "'" ++ fmt x ++ "' is not available in Uf theory."
+       in if isError
+            then unwrap $ genericError message
+            else warn message
 
 checkEUf :: [Section] -> IO ()
 checkEUf sections = forM_ sections checkEUfSection
@@ -517,14 +516,9 @@ checkEUf sections = forM_ sections checkEUfSection
 
     checkEUfSignal :: Signal -> IO ()
     checkEUfSignal (TSLInt _) =
-      unwrap $
-        genericError
-          "Integers are not available in the UF theory."
+      unsupported "integer"
     checkEUfSignal (TSLReal _) =
-      undefined
-        unwrap
-        $ genericError
-          "Reals are not available in the UF theory."
+      unsupported "real"
     checkEUfSignal (Symbol _) = return ()
     checkEUfSignal (BinaryFunction binaryFunc _ _) = unsupported binaryFunc
     checkEUfSignal (UninterpretedFunction _ sigs) = forM_ sigs checkEUfSignal

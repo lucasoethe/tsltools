@@ -31,6 +31,7 @@ module TSL.Error
     errModel,
     errSygus,
     unwrap,
+    warn,
   )
 where
 
@@ -39,7 +40,7 @@ import Data.IntMap (empty, insert)
 import qualified Data.IntMap as IM (lookup)
 import Data.Maybe (fromMaybe)
 import System.Exit (die, exitFailure)
-import System.IO (hPrint, stderr)
+import System.IO (hPrint, hPutStrLn, stderr)
 import TSL.Base.Expression (ExprPos (..), SrcPos (..))
 import TSL.Base.Types (ExprType (..), prType, reducer)
 import Text.Parsec.Error (ParseError)
@@ -164,6 +165,9 @@ unwrap :: Either Error a -> IO a
 unwrap = \case
   Left err -> die $ show err
   Right val -> return val
+
+warn :: String -> IO ()
+warn = hPutStrLn stderr
 
 -- | Use this error constructor, if some sytax related misbehavior is
 -- detected.
