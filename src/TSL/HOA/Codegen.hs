@@ -195,9 +195,7 @@ predicateParser = do
     varParser = do
       ident <-
         char 'b'
-          >> ( (char 't' >> error "\"True\" cannot be part of an AST.")
-                 <|> (char 'f' >> error "\"False\" cannot be part of an AST.")
-                 <|> (char '0' >> identParser)
+          >> ( (char '0' >> identParser)
              )
       return $ Var ident
     appParser = do
