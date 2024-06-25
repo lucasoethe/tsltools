@@ -1,5 +1,5 @@
--- | Implement HOA controller in Javascript
-module TSL.HOA.JavaScript
+-- | Implement HOA controller in ST
+module TSL.HOA.StructuredText
   ( implement,
   )
 where
@@ -23,33 +23,47 @@ implement isCounterStrat hoa =
       is = Set.toList is'
       cs = Set.toList cs'
       os = Set.toList os'
-   in "function "
+   in "PROGRAM "
         ++ functionName
-        ++ "({"
-        -- inputs and cells (using JS object destructuring)
-        ++ commas ("currentState" : is ++ cs)
-        ++ "}) {\n"
-        -- instantiate next cells (using let)
-        ++ ( if not (null cs)
+        ++ "\nVAR_INPUT\n"
+        -- inputs
+        ++ ( if not (null is)
                then
-                 indent 1
-                   ++ "let "
-                   ++ commas (map (cellOutputNextPrefix ++) (cs ++ os))
+                   commas ("currentState" : is)
+                   ++ " = itemgetter("
+                   ++ commas ("currentState" : map wrapQuotes is)
+                   ++ ")(_inputs_and_cells)"
                    ++ "\n\n"
                else ""
            )
+        ++ "END_VAR\n"
+        ++ "VAR\n"
+        -- cells
+        ++ ( if not (null cs)
+          then            
+            indent 1
+              ++ commas ("currentState" : cs)
+              ++ " = itemgetter("
+              ++ commas ("currentState" : map wrapQuotes cs)
+              ++ ")(_inputs_and_cells)"
+              ++ "\n\n"
+          else ""
+        )
+        ++ "END_VAR\n"
         -- controller logic
         ++ controller
         ++ "\n\n"
         -- return next cells and outputs (using JS object)
         ++ indent 1
         ++ "return {"
-        ++ commas ("currentState" : map cellToNext (cs ++ os))
+        ++ commas ("\"currentState\": currentState" : map cellToNext (cs ++ os))
         ++ "}\n"
-        ++ "}"
+        ++ "\n"
+        ++ "END_PROGRAM"
   where
+    wrapQuotes s = "\"" ++ s ++ "\""
     commas = intercalate ", "
-    cellToNext c = c ++ ": " ++ cellOutputNextPrefix ++ c
+    cellToNext c = wrapQuotes c ++ ": " ++ cellOutputNextPrefix ++ c
 
 indent :: Int -> String
 indent n = replicate (2 * n) ' '
@@ -63,25 +77,25 @@ config =
       impMult = "*",
       impDiv = "/",
       -- binary comparators
-      impEq = "===",
-      impNeq = "!==",
+      impEq = "==",
+      impNeq = "!=",
       impLt = "<",
       impGt = ">",
       impLte = "<=",
       impGte = ">=",
       -- logic
-      impAnd = "&&",
-      impTrue = "true",
-      impFalse = "false",
-      impNot = "!",
+      impAnd = "AND",
+      impTrue = "True",
+      impFalse = "False",
+      impNot = "NOT ",
       -- language constructs
-      impIf = "if",
-      impElif = "else if",
-      impCondition = \c -> "(" ++ c ++ ")",
+      impIf = "IF",
+      impElif = "ELSEIF",
+      impCondition = (++ " "),
       impFuncApp = \f args -> f ++ "(" ++ intercalate ", " args ++ ")",
-      impAssign = \x y -> x ++ " = " ++ y,
+      impAssign = \x y -> x ++ " := " ++ y,
       impIndent = indent,
-      impBlockStart = " {",
-      impBlockEnd = const "}",
+      impBlockStart = "THEN",
+      impBlockEnd = \x -> if x then "END_IF" else "",
       impInitialIndent = 1
     }

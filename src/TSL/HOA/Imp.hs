@@ -47,7 +47,7 @@ data ImpConfig = ImpConfig
     impAssign :: String -> String -> String,
     impIndent :: Int -> String,
     impBlockStart :: String,
-    impBlockEnd :: String,
+    impBlockEnd :: Bool -> String,
     impInitialIndent :: Int
   }
 
@@ -62,22 +62,33 @@ withConfig' config isCounterStrat prog =
 -- | WRITE PROGRAM TO STRING
 type Imp a = Reader ImpConfig a
 
+data IfElif = If | ElIf | FinalIf | FinalElIf deriving (Enum, Eq)
+
+isFinalHelper :: IfElif -> Bool
+isFinalHelper If = False
+isFinalHelper ElIf = False
+isFinalHelper FinalIf = True
+isFinalHelper FinalElIf = True
+
 writeProgram :: Bool -> CG.Program -> Imp String
 writeProgram isCounterStrat (CG.Program stateTransList) = do
   ImpConfig {..} <- Reader.ask
   lines <-
-    concat <$> zipWithM (writeStateTrans isCounterStrat) (False : repeat True) stateTransList
+    concat <$> zipWithM (writeStateTrans isCounterStrat) (first : replicate (stateTransListLen - 2) ElIf ++ last) stateTransList
   return $ impIndent impInitialIndent ++ intercalate ("\n" ++ impIndent impInitialIndent) (discardEmptyLines lines)
   where
     discardEmptyLines lines =
       filter (\l -> not (null l) && not (all isSpace l)) lines
+    stateTransListLen = length stateTransList
+    first = if stateTransListLen == 1 then FinalIf else If
+    last = if stateTransListLen == 1 then [] else [FinalElIf]
 
-writeStateTrans :: Bool -> Bool -> CG.StateTrans -> Imp [String]
+writeStateTrans :: Bool -> IfElif -> CG.StateTrans -> Imp [String]
 writeStateTrans isCounterStrat useElif (CG.StateTrans state transList) = do
   ImpConfig {..} <- Reader.ask
-  let opIf = if useElif then impElif else impIf
+  let opIf = if useElif == If || useElif == FinalIf then impIf else impElif
 
-  innerLines <- concat <$> zipWithM (writeTrans isCounterStrat) (False : repeat True) transList
+  innerLines <- concat <$> zipWithM (writeTrans isCounterStrat) (first : replicate (transListLen - 2) ElIf ++ last) transList
 
   return $
     [ opIf
@@ -86,12 +97,16 @@ writeStateTrans isCounterStrat useElif (CG.StateTrans state transList) = do
         ++ impBlockStart
     ]
       ++ map (impIndent 1 ++) innerLines
-      ++ [impBlockEnd]
+      ++ [impBlockEnd $ isFinalHelper useElif]
+  where
+    transListLen = length transList
+    first = if transListLen == 1 then FinalIf else If
+    last = if transListLen == 1 then [] else [FinalElIf]
 
-writeTrans :: Bool -> Bool -> CG.Trans -> Imp [String]
+writeTrans :: Bool -> IfElif -> CG.Trans -> Imp [String]
 writeTrans isCounterStrat useElif (CG.Trans ps us target) = do
   ImpConfig {..} <- Reader.ask
-  let opIf = if useElif then impElif else impIf
+  let opIf = if useElif == If || useElif == FinalIf then impIf else impElif
 
   ps' <- mapM writePredicate ps
   us' <- mapM writeUpdate us
@@ -103,7 +118,7 @@ writeTrans isCounterStrat useElif (CG.Trans ps us target) = do
     [opIf ++ " " ++ impCondition condition' ++ impBlockStart]
       ++ assignments'
       ++ [impIndent 1 ++ impAssign "currentState" target]
-      ++ [impBlockEnd]
+      ++ [impBlockEnd $ isFinalHelper useElif]
 
 writePredicate :: CG.Predicate -> Imp String
 writePredicate p = do

@@ -45,6 +45,7 @@ optionsParser =
     <*> ( flag' HOA.Arduino (long "arduino" <> help "generates code for Arduino")
             <|> flag' HOA.Python (long "python" <> help "generates code for Python")
             <|> flag' HOA.JS (long "js" <> help "generates code for JS backend")
+            <|> flag' HOA.StructuredText (long "st" <> help "generates code for StructuredText")
             <|> flag' HOA.XState (long "xstate" <> help "generates code for xstate diagrams")
             <|> flag' HOA.Verilog (long "verilog" <> help "generates code for Verilog")
         )

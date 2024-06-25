@@ -82,6 +82,6 @@ config =
       impAssign = \x y -> x ++ " = " ++ y,
       impIndent = indent,
       impBlockStart = ":",
-      impBlockEnd = "",
+      impBlockEnd = const "",
       impInitialIndent = 1
     }

@@ -42,6 +42,6 @@ config =
       impAssign = \x y -> x ++ " <= " ++ y ++ ";",
       impIndent = \n -> replicate (2 * n) ' ',
       impBlockStart = " begin",
-      impBlockEnd = "end ",
+      impBlockEnd = const "end ",
       impInitialIndent = 0
     }

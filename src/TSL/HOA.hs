@@ -8,6 +8,7 @@ import TSL.Error (genericError, unwrap)
 import qualified TSL.HOA.Arduino as Arduino (implement)
 import qualified TSL.HOA.JavaScript as JS (implement)
 import qualified TSL.HOA.Python as Python (implement)
+import qualified TSL.HOA.StructuredText as StructuredText (implement)
 import qualified TSL.HOA.Verilog as Verilog (implement)
 import qualified TSL.HOA.XState as XState (implement)
 
@@ -15,6 +16,7 @@ data CodeTarget
   = Python
   | Arduino
   | JS
+  | StructuredText
   | Verilog
   | XState
   deriving (Show, Ord, Eq)
@@ -26,6 +28,7 @@ implement isCounter = \case
   JS -> JS.implement isCounter
   Arduino -> Arduino.implement isCounter
   Verilog -> Verilog.implement isCounter
+  StructuredText -> StructuredText.implement isCounter
 
 implement' :: Bool -> CodeTarget -> String -> IO String
 implement' isCounter target hoaStr = case H.parse hoaStr of
