@@ -18,11 +18,11 @@ specifications.
 
 # Tool Overview
 
-To run full pipeline synthesis, use the `tsl synth` command.
+To run full pipeline synthesis, use the `tsl synthesize` command.
 This takes a TSL spec and outputs a controller programmed in the specified target language.
 For a quick test, you can run:
 
-```tsl synth -i test/res/specs/Heating.tsl --python```
+```tsl synthesize -i test/res/specs/Heating.tsl --python```
 
 The precise usage and arguments for each tool are describe by
 `tsl --help` and `tsl <subcommand> --help`. Note that most subcommands
