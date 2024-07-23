@@ -25,45 +25,13 @@ implement isCounterStrat hoa =
       os = Set.toList os'
    in "PROGRAM "
         ++ functionName
-        ++ "\nVAR_INPUT\n"
-        -- inputs
-        ++ ( if not (null is)
-               then
-                   commas ("currentState" : is)
-                   ++ " = itemgetter("
-                   ++ commas ("currentState" : map wrapQuotes is)
-                   ++ ")(_inputs_and_cells)"
-                   ++ "\n\n"
-               else ""
-           )
-        ++ "END_VAR\n"
-        ++ "VAR\n"
-        -- cells
-        ++ ( if not (null cs)
-          then            
-            indent 1
-              ++ commas ("currentState" : cs)
-              ++ " = itemgetter("
-              ++ commas ("currentState" : map wrapQuotes cs)
-              ++ ")(_inputs_and_cells)"
-              ++ "\n\n"
-          else ""
-        )
-        ++ "END_VAR\n"
-        -- controller logic
-        ++ controller
-        ++ "\n\n"
-        -- return next cells and outputs (using JS object)
-        ++ indent 1
-        ++ "return {"
-        ++ commas ("\"currentState\": currentState" : map cellToNext (cs ++ os))
-        ++ "}\n"
         ++ "\n"
-        ++ "END_PROGRAM"
+        ++ controller
+        ++ "\n"
+        ++ intercalate ";\n" (map cellToNext (cs ++ os))
+        ++ "\nEND_PROGRAM"
   where
-    wrapQuotes s = "\"" ++ s ++ "\""
-    commas = intercalate ", "
-    cellToNext c = wrapQuotes c ++ ": " ++ cellOutputNextPrefix ++ c
+    cellToNext c = c ++ " := " ++ cellOutputNextPrefix ++ c
 
 indent :: Int -> String
 indent n = replicate (2 * n) ' '
