@@ -1,5 +1,6 @@
 module TSL.Command.Synthesize (command) where
 
+import Data.Maybe (fromJust)
 import Options.Applicative (Parser, ParserInfo, action, flag', fullDesc, header, help, helper, info, long, metavar, optional, progDesc, short, showDefault, strOption, value, (<|>))
 import qualified TSL.HOA as HOA
 import qualified TSL.LTL as LTL
@@ -81,8 +82,17 @@ synthesize (Options {inputPath, outputPath, target, solverPath, ltlsyntPath}) = 
   -- TLSF (String) -> HOA controller (String)
   hoaController <- LTL.synthesize ltlsyntPath tlsfSpec
 
+  hoaController <-
+    case hoaController of
+      Nothing -> TLSF.counter' theorizedSpec >>= LTL.synthesize ltlsyntPath >>= return . Left . fromJust
+      Just c -> return $ Right c
+
   -- HOA controller (String) -> controller in target language (String)
-  targetController <- HOA.implement' False target hoaController
+  targetController <-
+    either
+      (HOA.implement' True target)
+      (HOA.implement' False target)
+      hoaController
 
   -- Write to output
   writeOutput outputPath targetController

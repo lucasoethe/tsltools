@@ -1,6 +1,7 @@
 -- | Utilities related to LTL synthesis.
 module TSL.LTL (synthesize, synthesize', realizable) where
 
+import Control.Exception (handle)
 import Control.Monad (unless)
 import Data.Maybe (isJust)
 import qualified Syfco as S
@@ -9,13 +10,14 @@ import System.Exit (ExitCode (ExitSuccess))
 import System.Process (readProcessWithExitCode)
 import TSL.Error (genericError, unwrap)
 
--- | Given LTL spec in TLSF format, synthesize an HOA controller
-synthesize :: FilePath -> String -> IO String
+-- | Given LTL spec in TLSF format, synthesize a Right HOA controller
+--   If unrealizable, generate a Left counterstrategy
+synthesize :: FilePath -> String -> IO (Maybe String)
 synthesize ltlsyntPath tlsfContents = do
   (exitCode, stdout, stderr) <- synthesize' ltlsyntPath tlsfContents
   if exitCode /= ExitSuccess
-    then unwrap . genericError $ "TSL spec UNREALIZABLE.\nltlsynt stdout:\n" ++ stdout ++ "\nltlstderr:\n" ++ stderr
-    else return . unlines . tail . lines $ stdout
+    then return Nothing
+    else return . Just . unlines . tail . lines $ stdout
 
 realizable :: FilePath -> String -> IO Bool
 realizable ltlsyntPath tlsfContents = do

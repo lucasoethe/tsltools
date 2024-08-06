@@ -1,5 +1,6 @@
 module TSL.Command.Hoa (command) where
 
+import Data.Maybe (fromJust)
 import Options.Applicative (Parser, ParserInfo, action, fullDesc, header, help, helper, info, long, metavar, optional, progDesc, short, showDefault, strOption, value)
 import qualified TSL.LTL as LTL
 import qualified TSL.ModuloTheories as ModuloTheories
@@ -74,7 +75,7 @@ hoa (Options {inputPath, outputPath, solverPath, ltlsyntPath}) = do
   hoaController <- LTL.synthesize ltlsyntPath tlsfSpec
 
   -- Write to output
-  writeOutput outputPath hoaController
+  writeOutput outputPath $ fromJust hoaController -- TODO fix this to handle counterstrategies
 
 command :: ParserInfo (IO ())
 command = hoa <$> optionsParserInfo
