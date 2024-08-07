@@ -2,6 +2,7 @@ module TSL.Command.Synthesize (command) where
 
 import Data.Maybe (fromJust)
 import Options.Applicative (Parser, ParserInfo, action, flag', fullDesc, header, help, helper, info, long, metavar, optional, progDesc, short, showDefault, strOption, value, (<|>))
+import System.Exit (ExitCode (ExitFailure), exitSuccess, exitWith)
 import qualified TSL.HOA as HOA
 import qualified TSL.LTL as LTL
 import qualified TSL.ModuloTheories as ModuloTheories
@@ -90,12 +91,16 @@ synthesize (Options {inputPath, outputPath, target, solverPath, ltlsyntPath}) = 
   -- HOA controller (String) -> controller in target language (String)
   targetController <-
     either
-      (HOA.implement' True target)
+      (\h -> putStrLn "Warning: Unrealizable Spec, generating counterstrategy" >> HOA.implement' True target h)
       (HOA.implement' False target)
       hoaController
 
   -- Write to output
   writeOutput outputPath targetController
+
+  case hoaController of
+    Left _ -> exitWith $ ExitFailure 1
+    Right _ -> exitSuccess
 
 command :: ParserInfo (IO ())
 command = synthesize <$> optionsParserInfo
