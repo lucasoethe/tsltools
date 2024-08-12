@@ -3,6 +3,7 @@ module TSL.Command.Synthesize (command) where
 import Data.Maybe (fromJust)
 import Options.Applicative (Parser, ParserInfo, action, flag', fullDesc, header, help, helper, info, long, metavar, optional, progDesc, short, showDefault, strOption, value, (<|>))
 import System.Exit (ExitCode (ExitFailure), exitSuccess, exitWith)
+import TSL.Error (warn)
 import qualified TSL.HOA as HOA
 import qualified TSL.LTL as LTL
 import qualified TSL.ModuloTheories as ModuloTheories
@@ -91,7 +92,7 @@ synthesize (Options {inputPath, outputPath, target, solverPath, ltlsyntPath}) = 
   -- HOA controller (String) -> controller in target language (String)
   targetController <-
     either
-      (\h -> putStrLn "Warning: Unrealizable Spec, generating counterstrategy" >> HOA.implement' True target h)
+      (\h -> warn "Warning: Unrealizable Spec, generating counterstrategy" >> HOA.implement' True target h)
       (HOA.implement' False target)
       hoaController
 
