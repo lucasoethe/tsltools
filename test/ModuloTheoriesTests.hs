@@ -15,6 +15,7 @@ where
 import Control.Monad.Trans.Except
 import Data.Either (isRight)
 import qualified Data.Map as Map
+import Distribution.Simple.Utils (warn)
 import Distribution.TestSuite
   ( Progress (..),
     Result (..),
@@ -22,6 +23,7 @@ import Distribution.TestSuite
     TestInstance (..),
   )
 import System.Directory (doesFileExist)
+import TSL.Error (warn)
 import TSL.ModuloTheories
   ( Cfg (..),
     buildDtoList,
@@ -191,5 +193,5 @@ tests = do
   if cvc5Exists
     then return allTests
     else do
-      putStrLn $ "WARNING: CVC5 PATH " ++ cvc5Path ++ " NOT FOUND!"
+      _ <- TSL.Error.warn ("Warning: CVC5 PATH " ++ cvc5Path ++ " NOT FOUND!")
       return []

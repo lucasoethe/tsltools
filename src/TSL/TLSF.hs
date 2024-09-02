@@ -5,6 +5,8 @@ module TSL.TLSF
   ( lower,
     lower',
     tlsfToTslTerm,
+    counter',
+    counter,
   )
 where
 
@@ -31,6 +33,72 @@ import TSL.Base.Reader (readTSL)
 import TSL.Base.Specification (Specification (..), toFormula)
 import TSL.Base.SymbolTable (stName)
 import TSL.Error (unwrap)
+
+-- | Creates the a counterspec for a given TSL
+-- in the LTL under-approximation in TLSF format.
+counter' :: String -> IO String
+counter' specStr = do
+  spec <- readTSL specStr
+  spec' <- unwrap spec
+  return $ counter spec'
+
+counter :: Specification -> String
+counter Specification {assumptions, guarantees, symboltable} =
+  unlines
+    [ "INFO {",
+      "  TITLE:       \"Converted TSL Specification\"",
+      "  DESCRIPTION: \"TSL specification, which has been converted to TLSF.\"",
+      "  SEMANTICS:   Mealy",
+      "  TARGET:      Mealy",
+      "}",
+      "MAIN {",
+      if null ins
+        then ""
+        else
+          unlines
+            [ "  INPUTS {",
+              concatMap ((++ ";\n") . ("    " ++)) outs ++ "  }"
+            ],
+      if null outs
+        then ""
+        else
+          unlines
+            [ "  OUTPUTS {",
+              concatMap ((++ ";\n") . ("    " ++)) ins ++ "  }"
+            ],
+      "  ASSUME {",
+      unlines $ map (\x -> "    " ++ toTLSF x ++ ";") mutual,
+      "  }\n",
+      "  GUARANTEE {",
+      unlines $ map (\x -> "    !" ++ toTLSF x ++ ";") ([formula]),
+      unlines $ map (\x -> "    " ++ toTLSF x ++ ";") (assumptions),
+      "  }",
+      "}"
+    ]
+  where
+    formula = toFormula assumptions guarantees
+
+    toTLSF :: Formula Int -> String
+    toTLSF =
+      tlsfFormula (stName symboltable)
+
+    ins =
+      map (toTLSF . Check) $
+        toList $
+          checks formula
+
+    outs =
+      map (toTLSF . uncurry Update) upds
+
+    upds =
+      elems $
+        union (updates formula) $
+          S.map (\x -> (x, Signal x)) $
+            outputs formula
+
+    mutual =
+      map (Globally . exactlyOne . map (uncurry Update)) $
+        groupBy ((==) `on` fst) upds
 
 -- | Creates the LTL under-approximation in TLSF for a given TSL
 -- specification (String).

@@ -1,6 +1,9 @@
 module TSL.Command.Hoa (command) where
 
+import Data.Maybe (fromJust)
 import Options.Applicative (Parser, ParserInfo, action, fullDesc, header, help, helper, info, long, metavar, optional, progDesc, short, showDefault, strOption, value)
+import System.Exit (ExitCode (ExitFailure), exitSuccess, exitWith)
+import TSL.Error (warn)
 import qualified TSL.LTL as LTL
 import qualified TSL.ModuloTheories as ModuloTheories
 import qualified TSL.Preprocessor as Preprocessor
@@ -73,8 +76,21 @@ hoa (Options {inputPath, outputPath, solverPath, ltlsyntPath}) = do
   -- TLSF (String) -> HOA controller (String)
   hoaController <- LTL.synthesize ltlsyntPath tlsfSpec
 
-  -- Write to output
-  writeOutput outputPath hoaController
+  hoaController <-
+    case hoaController of
+      Nothing -> TLSF.counter' theorizedSpec >>= LTL.synthesize ltlsyntPath >>= return . Left . fromJust
+      Just c -> return $ Right c
+
+  case hoaController of
+    Left c -> do
+      warn "Warning: Unrealizable Spec, generating counterstrategy"
+      writeOutput outputPath c
+      exitWith $ ExitFailure 1
+    Right c -> do
+      writeOutput outputPath c
+      exitSuccess
+
+-- Write to output
 
 command :: ParserInfo (IO ())
 command = hoa <$> optionsParserInfo
